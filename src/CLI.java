@@ -21,6 +21,8 @@ public class CLI implements Runnable {
             out = new PrintWriter(client.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
+            System.out.println("Enter a nickname: ");
+
             InputHandler handler = new InputHandler();
             Thread thread = new Thread(handler);
             thread.start();
@@ -43,7 +45,8 @@ public class CLI implements Runnable {
                 client.close();
             }
         } catch (Exception e) {
-            System.err.println("Unable to establish a connection to the server.");
+            System.err.println("Could not establish a connection with the server. " +
+                    "If you are running this server locally, try running the 'Server.java' file.");
         }
     }
 

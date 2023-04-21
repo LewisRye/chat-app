@@ -42,7 +42,8 @@ public class GUI extends Application {
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("Could not establish a connection with the server. If you are running this server locally, try running the 'Server.java' file.");
+                    System.err.println("Could not establish a connection with the server. " +
+                            "If you are running this server locally, try running the 'Server.java' file.");
                     Platform.exit();
                 }
             }).start();
@@ -132,10 +133,13 @@ public class GUI extends Application {
         BorderPane pane = new BorderPane();
 
         VBox leftContent = new VBox();
+        Label header = new Label("Dashboard");
+        header.setStyle("-fx-font-weight: bold");
         Button home = new Button("Home");
         Button friends = new Button("Friends");
-        leftContent.getChildren().addAll(home, friends);
+        leftContent.getChildren().addAll(header, home, friends);
         leftContent.setPrefWidth(150);
+        leftContent.setSpacing(10);
 
         BorderPane centerContent = new BorderPane();
         TextField input = new TextField(); input.setPromptText("Message the chat");
@@ -157,10 +161,13 @@ public class GUI extends Application {
         centerContent.setPrefWidth(650);
 
         VBox rightContent = new VBox();
-        rightContent.getChildren().add(new Label("Augustus"));
-        rightContent.getChildren().add(new Label("Electro"));
-        rightContent.getChildren().add(new Label("Accendo"));
+        Label connected = new Label("Connected Users:");
+        connected.setStyle("-fx-font-weight: bold");
+        rightContent.getChildren().add(connected);
+        rightContent.getChildren().add(new Label("User1")); // placeholder
+        rightContent.getChildren().add(new Label("User2")); // placeholder
         rightContent.setPrefWidth(200);
+        rightContent.setSpacing(10);
 
         HBox content = new HBox();
         content.setSpacing(10);
