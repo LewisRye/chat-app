@@ -1,0 +1,204 @@
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+
+public class GUI extends Application {
+    private Scene mainScene;
+    private Stage stage;
+    private Socket client;
+    private PrintWriter out;
+    private BufferedReader in;
+    private TextArea display;
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        try {
+            new Thread(() -> { // thread responsible for the data handling
+                try {
+                    client = new Socket("localhost", 65000);
+                    out = new PrintWriter(client.getOutputStream(), true);
+                    in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+
+                    while (client.isConnected()) {
+                        String data = in.readLine();
+
+                        if (data != null) {
+                            displayMessage(data);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Could not establish a connection with the server. If you are running this server locally, try running the 'Server.java' file.");
+                    Platform.exit();
+                }
+            }).start();
+
+            Platform.runLater(() -> { // thread responsible for UI
+                stage = primaryStage;
+
+                BorderPane loginPane = new BorderPane();
+                VBox items = new VBox();
+                Scene loginScene = new Scene(loginPane);
+                MenuBar menuBar = new MenuBar();
+                Menu file = new Menu("File");
+                MenuItem exit = new MenuItem("Exit"); exit.setOnAction(e -> Platform.exit());
+                file.getItems().addAll(exit);
+                menuBar.getMenus().addAll(file);
+
+                Label welcome = new Label("Welcome, choose a username.");
+                TextField username = new TextField(); username.setPromptText("Set your username"); username.setMaxSize(150, 10);
+                username.setOnKeyPressed(e -> {
+                    if (e.getCode() == KeyCode.ENTER) {
+                        String input = username.getText();
+
+                        if ((!input.startsWith("/")) && (input.length() >= 3) && (input.length() <= 12)) {
+                            sendMessage(input);
+                            stage.setScene(mainScene);
+                        } else {
+                            Alert a = new Alert(Alert.AlertType.ERROR, "Your username must be between 3 and 12 characters \n" +
+                                    "and must not begin with a '/'.");
+                            a.showAndWait();
+                        }
+                    }
+                });
+                Button set = new Button("Set Username"); set.setOnAction(e -> {
+                    String input = username.getText();
+
+                    if ((!input.startsWith("/")) && (input.length() >= 3) && (input.length() <= 12)) {
+                        sendMessage(input);
+                        stage.setScene(mainScene);
+                    } else {
+                        Alert a = new Alert(Alert.AlertType.ERROR, "Your username must be between 3 and 12 characters \n" +
+                                "and must not begin with a '/'.");
+                        a.showAndWait();
+                    }
+                });
+
+                loginPane.setTop(menuBar);
+                items.getChildren().addAll(welcome, username, set);
+                items.setAlignment(Pos.CENTER);
+                items.setSpacing(10);
+                loginPane.setCenter(items);
+
+                stage.setWidth(1000);
+                stage.setHeight(750);
+                stage.setMinWidth(750);
+                stage.setMinHeight(500);
+
+                stage.setTitle("Chat App");
+                stage.getIcons().add(new Image("icon.png"));
+                stage.setScene(loginScene);
+                stage.show();
+
+                stage.setOnCloseRequest(e -> shutdown());
+
+                BorderPane mainPane = new BorderPane();
+                mainScene = new Scene(mainPane);
+                mainPane.setTop(createMenu());
+                mainPane.setCenter(createContent());
+            });
+        } catch (Exception e) {
+            System.err.println("Unable to establish a connection to the server.");
+            Platform.exit();
+        }
+    }
+
+    private MenuBar createMenu() {
+        MenuBar menu = new MenuBar();
+
+        Menu file = new Menu("File");
+        MenuItem exit = new MenuItem("Leave"); exit.setOnAction(e -> sendMessage("/quit"));
+        file.getItems().addAll(exit);
+
+        menu.getMenus().addAll(file);
+        return menu;
+    }
+
+    private BorderPane createContent() {
+        BorderPane pane = new BorderPane();
+
+        VBox leftContent = new VBox();
+        Button home = new Button("Home");
+        Button friends = new Button("Friends");
+        leftContent.getChildren().addAll(home, friends);
+        leftContent.setPrefWidth(150);
+
+        BorderPane centerContent = new BorderPane();
+        TextField input = new TextField(); input.setPromptText("Message the chat");
+        input.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                sendMessage(input.getText());
+                input.clear();
+            }
+        });
+        display = new TextArea("Welcome. Type /quit to leave.\n\n");
+        display.setEditable(false);
+        ScrollPane scroll = new ScrollPane(display);
+        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
+        scroll.setCursor(Cursor.DEFAULT);
+        centerContent.setTop(input);
+        centerContent.setCenter(scroll);
+        centerContent.setPrefWidth(650);
+
+        VBox rightContent = new VBox();
+        rightContent.getChildren().add(new Label("Augustus"));
+        rightContent.getChildren().add(new Label("Electro"));
+        rightContent.getChildren().add(new Label("Accendo"));
+        rightContent.setPrefWidth(200);
+
+        HBox content = new HBox();
+        content.setSpacing(10);
+        content.getChildren().addAll(leftContent, centerContent, rightContent);
+        pane.setCenter(content);
+
+        stage.widthProperty().addListener((obs, oldVal, newVal) ->
+            centerContent.setPrefWidth(centerContent.getPrefWidth() + (newVal.doubleValue() - oldVal.doubleValue())));
+
+        return pane;
+    }
+
+    private void sendMessage(String message) {
+        if (message.equals("/quit")) {
+            out.println(message);
+            Platform.exit();
+            System.exit(0);
+        } else {
+            out.println(message);
+        }
+    }
+
+    private void shutdown() {
+        try {
+            if (!client.isClosed()) {
+                sendMessage("/quit");
+                client.close();
+            }
+        } catch (Exception e) {
+            Alert a = new Alert(Alert.AlertType.ERROR, "Could not establish a connection with the server.");
+            a.showAndWait();
+            Platform.exit();
+        }
+        Platform.exit();
+    }
+
+    public void displayMessage(String message) {
+        display.appendText("\n" + message);
+        display.setScrollTop(Double.MAX_VALUE); // scrolls to the bottom when a new message is sent
+    }
+}
