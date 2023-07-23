@@ -2,9 +2,11 @@
   <library name="lib">
     <CLASSES>
       <root url="file://$USER_HOME$/.jdks/javafx-sdk-17.0.7/lib" />
+      <root url="file://$USER_HOME$/.jdks/javafx-sdk-17.0.7/lib" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
+    <jarDirectory url="file://$USER_HOME$/.jdks/javafx-sdk-17.0.7/lib" recursive="false" />
     <jarDirectory url="file://$USER_HOME$/.jdks/javafx-sdk-17.0.7/lib" recursive="false" />
   </library>
 </component>

@@ -4,6 +4,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+/*
+ * THE CLI IS FOR DEBUGGING, DO NOT USE THIS FOR ANY OTHER PURPOSE.
+ */
+
 public class CLI implements Runnable {
     private Socket client;
     private BufferedReader in;
@@ -21,7 +25,8 @@ public class CLI implements Runnable {
             out = new PrintWriter(client.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-            System.out.println("Enter a nickname: ");
+            System.out.println("CLI version of ChatApp, use this for debugging ONLY.");
+            System.out.println("Enter a unique nickname consisting of 3 to 12 characters: ");
 
             InputHandler handler = new InputHandler();
             Thread thread = new Thread(handler);

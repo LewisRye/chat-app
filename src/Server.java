@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,7 +32,7 @@ public class Server implements Runnable {
             while (!finished) { // constantly allows new connections
                 Socket client = server.accept();
                 ConnectionHandler handler = new ConnectionHandler(client);
-                connections.add(handler);
+                connections.add(handler); // this would definitely go down if somebody spam joined
                 threadPool.execute(handler);
             }
         } catch (IOException e) {
@@ -41,9 +42,16 @@ public class Server implements Runnable {
     }
 
     public void broadcast(String message) {
+        ArrayList<String> users = new ArrayList<>();
+
+        for (ConnectionHandler ch : connections) {
+            users.add(ch.getNickname());
+        }
+
         for (ConnectionHandler ch : connections) {
             if (ch != null) {
                 ch.sendMessage(message);
+                ch.sendUserList(users);
             }
         }
     }
@@ -57,7 +65,10 @@ public class Server implements Runnable {
             for (ConnectionHandler ch : connections) {
                 ch.shutdown();
             }
-        } catch (IOException e) { }
+        } catch (IOException e) {
+            e.printStackTrace();
+            shutdown();
+        }
     }
 
     class ConnectionHandler implements Runnable {
@@ -80,30 +91,46 @@ public class Server implements Runnable {
 
                 boolean valid = false;
                 do {
+                    ArrayList<String> listOfNicknames = new ArrayList<>();
+                    for (ConnectionHandler ch : connections) {
+                        listOfNicknames.add(ch.getNickname());
+                    }
                     nickname = in.readLine();
-                    if (nickname.startsWith("/") || nickname.length() < 3 || nickname.length() > 12) {} else { valid = true; }
+                    if (nickname.startsWith("/") || nickname.length() < 3 || nickname.length() > 12 || listOfNicknames.contains(nickname)) {}
+                    else {
+                        valid = true;
+                    }
                 } while (!valid);
 
                 ZonedDateTime joinTime = ZonedDateTime.now(Clock.systemUTC());
 
                 LocalDateTime userJoinTime = joinTime.toLocalDateTime();
-                DateTimeFormatter timeJoinFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm");
+                DateTimeFormatter timeJoinFormatter = DateTimeFormatter.ofPattern("dd/MM/yy, HH:mm");
                 String zonedJoinTime = userJoinTime.format(timeJoinFormatter);
 
                 System.out.println("(" + joinTime + ") " + nickname + " joined the chat."); // this is for the server log
                 broadcast("(" + zonedJoinTime + ") " + nickname + " joined the chat.");
+
+                // QUITTING THE SERVER
 
                 String message;
                 while ((message = in.readLine()) != null) {
                     ZonedDateTime time = ZonedDateTime.now(Clock.systemUTC());
 
                     LocalDateTime userTime = time.toLocalDateTime();
-                    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy HH:mm");
+                    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yy, HH:mm");
                     String zonedTime = userTime.format(timeFormatter);
 
                     if (message.startsWith("/quit")) {
                         System.out.println("(" + time + ") " + nickname + " left the chat."); // this is for the server log
                         broadcast("(" + zonedTime + ") " + nickname + " left the chat.");
+                        for (Iterator<ConnectionHandler> it = connections.iterator(); it.hasNext();) { // removing users from the user list once they quit
+                            ConnectionHandler ch = it.next();
+                            if (ch.getNickname().equals(nickname)) {
+                                it.remove();
+                                broadcast("");
+                            }
+                        }
                         shutdown();
                     }
                     else {
@@ -119,6 +146,20 @@ public class Server implements Runnable {
             out.println(message);
         }
 
+        public void sendUserList(ArrayList<String> users) {
+            String formattedUserList = "/userlist";
+
+            for (String user : users) {
+                formattedUserList = formattedUserList + (", " + user);
+            }
+
+            out.println(formattedUserList);
+        }
+
+        public String getNickname() {
+            return nickname;
+        }
+
         public void shutdown() {
             try {
                 in.close();
@@ -127,7 +168,10 @@ public class Server implements Runnable {
                 if (!client.isClosed()) {
                     client.close();
                 }
-            } catch (IOException e) { }
+            } catch (IOException e) {
+                e.printStackTrace();
+                shutdown();
+            }
         }
     }
 

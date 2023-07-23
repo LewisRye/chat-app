@@ -19,7 +19,8 @@ public class GUI extends Application {
     private Socket client;
     private PrintWriter out;
     private BufferedReader in;
-    private TextArea display;
+    private TextArea displayMessage;
+    private TextArea displayUsers;
 
     public static void main(String[] args) {
         launch(args);
@@ -37,13 +38,17 @@ public class GUI extends Application {
                     while (client.isConnected()) {
                         String data = in.readLine();
 
-                        if (data != null) {
+                        if (data.startsWith("/userlist")) {
+                            displayUsers(data); // changes the user list when server suggests a user has joined / left
+                        }
+
+                        else {
                             displayMessage(data);
                         }
                     }
                 } catch (Exception e) {
                     System.err.println("Could not establish a connection with the server. " +
-                            "If you are running this server locally, try running the 'Server.java' file.");
+                            "If you are running this server locally, try running the 'Server.java' file. ");
                     Platform.exit();
                 }
             }).start();
@@ -149,9 +154,9 @@ public class GUI extends Application {
                 input.clear();
             }
         });
-        display = new TextArea("Welcome. Type /quit to leave.\n\n");
-        display.setEditable(false);
-        ScrollPane scroll = new ScrollPane(display);
+        displayMessage = new TextArea("Welcome. Type /quit to leave.\n\n");
+        displayMessage.setEditable(false);
+        ScrollPane scroll = new ScrollPane(displayMessage);
         scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         scroll.setFitToWidth(true);
         scroll.setFitToHeight(true);
@@ -163,9 +168,14 @@ public class GUI extends Application {
         VBox rightContent = new VBox();
         Label connected = new Label("Connected Users:");
         connected.setStyle("-fx-font-weight: bold");
-        rightContent.getChildren().add(connected);
-        rightContent.getChildren().add(new Label("User1")); // placeholder
-        rightContent.getChildren().add(new Label("User2")); // placeholder
+        displayUsers = new TextArea("{users}");
+        displayUsers.setEditable(false);
+        ScrollPane scroll2 = new ScrollPane(displayUsers);
+        scroll2.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+        scroll2.setFitToWidth(true);
+        scroll2.setCursor(Cursor.DEFAULT);
+        scroll2.setStyle("-fx-background-color: transparent");
+        rightContent.getChildren().addAll(connected, scroll2);
         rightContent.setPrefWidth(200);
         rightContent.setSpacing(10);
 
@@ -205,7 +215,16 @@ public class GUI extends Application {
     }
 
     public void displayMessage(String message) {
-        display.appendText("\n" + message);
-        display.setScrollTop(Double.MAX_VALUE); // scrolls to the bottom when a new message is sent
+        displayMessage.appendText("\n" + message);
+        displayMessage.setScrollTop(Double.MAX_VALUE); // scrolls to the bottom when a new message is sent
+    }
+
+    public void displayUsers(String message) {
+        displayUsers.setText("");
+        String[] split = message.split(", "); // finds each username in the list
+
+        for (int i = 1; i < split.length; i++) {
+            displayUsers.appendText(split[i] + "\n"); // adds each username to the user list UI
+        }
     }
 }
