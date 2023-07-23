@@ -66,31 +66,31 @@ public class GUI extends Application {
                 menuBar.getMenus().addAll(file);
 
                 Label welcome = new Label("Welcome, choose a username.");
-                TextField username = new TextField(); username.setPromptText("Set your username"); username.setMaxSize(150, 10);
+                TextField username = new TextField(); username.setPromptText("Username"); username.setMaxSize(150, 10);
                 username.setOnKeyPressed(e -> {
                     if (e.getCode() == KeyCode.ENTER) {
                         String input = username.getText();
 
-                        if ((!input.startsWith("/")) && (input.length() >= 3) && (input.length() <= 12)) {
+                        if (input.length() < 3 || input.length() > 12 || input.startsWith("/")) {
+                            Alert a = new Alert(Alert.AlertType.ERROR, "Your username must be between 3 and 12 characters \n" +
+                                    "and must not begin with '/'.");
+                            a.showAndWait();
+                        } else {
                             sendMessage(input);
                             stage.setScene(mainScene);
-                        } else {
-                            Alert a = new Alert(Alert.AlertType.ERROR, "Your username must be between 3 and 12 characters \n" +
-                                    "and must not begin with a '/'.");
-                            a.showAndWait();
                         }
                     }
                 });
                 Button set = new Button("Set Username"); set.setOnAction(e -> {
                     String input = username.getText();
 
-                    if ((!input.startsWith("/")) && (input.length() >= 3) && (input.length() <= 12)) {
+                    if (input.length() < 3 || input.length() > 12 || input.startsWith("/")) {
+                        Alert a = new Alert(Alert.AlertType.ERROR, "Your username must be between 3 and 12 characters \n" +
+                                "and must not begin with '/'.");
+                        a.showAndWait();
+                    } else {
                         sendMessage(input);
                         stage.setScene(mainScene);
-                    } else {
-                        Alert a = new Alert(Alert.AlertType.ERROR, "Your username must be between 3 and 12 characters \n" +
-                                "and must not begin with a '/'.");
-                        a.showAndWait();
                     }
                 });
 

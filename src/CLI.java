@@ -33,6 +33,7 @@ public class CLI implements Runnable {
             thread.start();
 
             String message;
+
             while ((message = in.readLine()) != null) {
                 System.out.println(message);
             }
