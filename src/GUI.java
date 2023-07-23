@@ -173,6 +173,7 @@ public class GUI extends Application {
         ScrollPane scroll2 = new ScrollPane(displayUsers);
         scroll2.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         scroll2.setFitToWidth(true);
+        scroll2.setFitToHeight(true);
         scroll2.setCursor(Cursor.DEFAULT);
         scroll2.setStyle("-fx-background-color: transparent");
         rightContent.getChildren().addAll(connected, scroll2);
